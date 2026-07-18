@@ -1,0 +1,13 @@
+<div id="prediction-result" class="result" aria-live="polite" th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div th:if="${prediction}" class="prediction-card">
+        <span>Prediction</span>
+        <strong th:text="${prediction.predictedFruit}">fruit</strong>
+        <ul>
+            <li th:each="probability : ${prediction.probabilities}">
+                <span th:text="${probability.key}">label</span>
+                <span th:text="${probability.value}">0%</span>
+            </li>
+        </ul>
+    </div>
+    <p class="error" role="alert" th:if="${errorMessage}" th:text="${errorMessage}">Prediction failed.</p>
+</div>

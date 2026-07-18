@@ -1,0 +1,31 @@
+# Gradle
+.gradle/
+build/
+/out/
+!gradle/wrapper/gradle-wrapper.jar
+
+# JVM artifacts and crash reports
+*.class
+*.log
+*.hprof
+
+# Local development state
+.env
+.env.*
+.worktrees/
+AGENTS.md
+
+# IntelliJ IDEA user state
+.idea/
+*.iws
+*.iml
+/data/
+
+# Python audit/tooling artifacts
+__pycache__/
+*.py[cod]
+
+# Local release and audit artifacts
+*.tar
+*.spdx.json
+release-artifacts/

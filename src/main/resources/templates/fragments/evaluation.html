@@ -1,0 +1,21 @@
+<section id="evaluation-panel" class="subpanel" aria-labelledby="evaluation-heading" th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="panel-heading">
+        <h3 id="evaluation-heading">Holdout evaluation</h3>
+        <button type="button" class="secondary" hx-get="/ui/evaluation" hx-target="#evaluation-panel" hx-swap="outerHTML">Refresh</button>
+    </div>
+    <div th:if="${evaluation}" class="evaluation-summary">
+        <strong th:text="|${#numbers.formatPercent(evaluation.accuracy, 1, 1)} accuracy|">0% accuracy</strong>
+        <span th:text="|${evaluation.correct} of ${evaluation.samples} correct|">0 correct</span>
+        <table>
+            <caption>Confusion matrix by actual and predicted label</caption>
+            <thead><tr><th>Actual</th><th>Predicted counts</th></tr></thead>
+            <tbody>
+            <tr th:each="row : ${evaluation.confusionMatrix}">
+                <th scope="row" th:text="${row.key}">actual</th>
+                <td th:text="${row.value}">predictions</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <p class="error" role="alert" th:if="${errorMessage}" th:text="${errorMessage}">Evaluation unavailable.</p>
+</section>

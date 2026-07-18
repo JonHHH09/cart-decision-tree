@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Service unavailable · CART Decision Tree</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" href="/css/app.css">
+</head>
+<body>
+<main id="main" class="dashboard">
+    <section class="panel error" role="alert">
+        <p class="eyebrow">Service unavailable</p>
+        <h1 th:text="${errorCode}">Operation unavailable</h1>
+        <p th:text="${errorMessage}">The operation could not be completed.</p>
+        <a href="/">Return to the dashboard</a>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<section id="training-panel" class="panel action-panel" aria-labelledby="training-heading" aria-live="polite"
+         th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">Model</p>
+            <h2 id="training-heading">Train and inspect</h2>
+        </div>
+        <form method="post" action="/ui/tree/train" hx-post="/ui/tree/train" hx-target="#training-panel" hx-swap="outerHTML">
+            <button type="submit">Retrain decision tree</button>
+        </form>
+    </div>
+    <p class="success" th:if="${training}">
+        Trained <strong th:text="${training.nodeCount}">0</strong> nodes from
+        <strong th:text="${training.trainingSamples}">0</strong> examples.
+    </p>
+    <div th:if="${tree}" th:replace="~{fragments/tree :: content}"></div>
+    <div th:if="${evaluation}" th:replace="~{fragments/evaluation :: content}"></div>
+    <p class="error" role="alert" th:if="${errorMessage}" th:text="${errorMessage}">Training failed.</p>
+</section>

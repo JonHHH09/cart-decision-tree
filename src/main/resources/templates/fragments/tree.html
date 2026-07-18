@@ -1,0 +1,14 @@
+<section id="tree-panel" class="subpanel" aria-labelledby="tree-heading" th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="panel-heading">
+        <h3 id="tree-heading">Decision path</h3>
+        <button type="button" class="secondary" hx-get="/ui/tree" hx-target="#tree-panel" hx-swap="outerHTML">Refresh</button>
+    </div>
+    <ol class="tree" th:if="${tree}">
+        <li th:each="node : ${tree.nodes}" th:style="|--depth:${node.depth}|">
+            <span class="branch" th:text="${node.branch}">root</span>
+            <span th:if="${!node.question.isEmpty()}" th:text="${node.question}">Question</span>
+            <span th:if="${!node.predictions.isEmpty()}" th:text="|Predict ${node.predictions}|">Prediction</span>
+        </li>
+    </ol>
+    <p class="error" role="alert" th:if="${errorMessage}" th:text="${errorMessage}">Tree unavailable.</p>
+</section>

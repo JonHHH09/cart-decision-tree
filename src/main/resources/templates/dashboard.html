@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Train, inspect, and evaluate a CART fruit classifier.">
+    <title>CART Decision Tree</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" href="/css/app.css">
+    <script defer th:src="@{/vendor/htmx.min.js}" src="/vendor/htmx.min.js"></script>
+    <script type="module" th:src="@{/js/app.js}" src="/js/app.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header class="site-header">
+    <p class="eyebrow">Explainable machine learning</p>
+    <h1>CART Fruit Classifier</h1>
+    <p>Train a decision tree from PostgreSQL data, inspect every split, and test a prediction.</p>
+</header>
+<main id="main" class="dashboard">
+    <section class="panel" aria-labelledby="dataset-heading">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Dataset</p>
+                <h2 id="dataset-heading">Training data</h2>
+            </div>
+            <span class="status" th:if="${dataset}" th:text="${dataset.trainingSamples + ' training · ' + dataset.testSamples + ' test'}">Dataset status</span>
+        </div>
+        <div th:if="${dataset}" class="metric-grid">
+            <article><strong th:text="${dataset.labels.size()}">0</strong><span>fruit labels</span></article>
+            <article><strong th:text="${dataset.minimumWeightGrams + '–' + dataset.maximumWeightGrams + 'g'}">0g</strong><span>weight range</span></article>
+            <article><strong th:text="${dataset.categoricalValues.get('color').size()}">0</strong><span>colors</span></article>
+        </div>
+    </section>
+
+    <section id="training-panel" class="panel action-panel" aria-labelledby="training-heading" aria-live="polite">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Model</p>
+                <h2 id="training-heading">Train and inspect</h2>
+            </div>
+            <form method="post" action="/ui/tree/train" hx-post="/ui/tree/train" hx-target="#training-panel" hx-swap="outerHTML">
+                <button type="submit">Train decision tree</button>
+            </form>
+        </div>
+        <p th:unless="${tree}">No active model. Train the tree to enable prediction and evaluation.</p>
+        <div th:if="${tree}" th:replace="~{fragments/tree :: content}"></div>
+        <div th:if="${evaluation}" th:replace="~{fragments/evaluation :: content}"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="prediction-heading">
+        <p class="eyebrow">Inference</p>
+        <h2 id="prediction-heading">Classify a fruit</h2>
+        <form class="prediction-form" method="post" action="/ui/predictions" hx-post="/ui/predictions" hx-target="#prediction-result" hx-swap="outerHTML">
+            <label>Color<input name="color" maxlength="32" required autocomplete="off"></label>
+            <label>Shape<input name="shape" maxlength="32" required autocomplete="off"></label>
+            <label>Weight (grams)<input name="weightGrams" type="number" min="1" max="10000" required></label>
+            <label>Skin<input name="skin" maxlength="32" required autocomplete="off"></label>
+            <button type="submit">Predict fruit</button>
+        </form>
+        <div id="prediction-result" class="result" aria-live="polite" th:replace="~{fragments/prediction :: content}"></div>
+    </section>
+
+    <section th:if="${errorMessage}" class="error" role="alert">
+        <strong th:text="${errorCode}">Error</strong>
+        <span th:text="${errorMessage}">The operation could not be completed.</span>
+    </section>
+</main>
+<footer>Server-rendered with Spring MVC, Thymeleaf, and HTMX.</footer>
+</body>
+</html>
