@@ -11,7 +11,12 @@ LABEL org.opencontainers.image.title="cart-decision-tree" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${REVISION}"
 
-RUN addgroup -S app && adduser -S -G app -h /app app
+RUN apk add --no-cache --upgrade \
+      "libexpat=2.8.2-r0" \
+      "p11-kit=0.26.2-r0" \
+      "p11-kit-trust=0.26.2-r0" \
+    && addgroup -S app \
+    && adduser -S -G app -h /app app
 
 WORKDIR /app
 COPY --chown=app:app ${JAR_FILE} app.jar
