@@ -2,6 +2,8 @@ package cart.decisiontree.adapter.in.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import cart.decisiontree.PostgreSqlTestImage;
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -22,8 +24,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 class McpProtocolIntegrationTests {
 
     @Container
-    @ServiceConnection
-    static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine")
+    @ServiceConnection(name = "postgres")
+    static final PostgreSQLContainer postgres = new PostgreSQLContainer(PostgreSqlTestImage.NAME)
             .withDatabaseName("cart_decision_tree")
             .withUsername("cart")
             .withUrlParam("sslmode", "disable")

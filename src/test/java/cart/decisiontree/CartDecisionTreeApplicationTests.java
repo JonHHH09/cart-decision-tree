@@ -13,8 +13,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 class CartDecisionTreeApplicationTests {
 
     @Container
-    @ServiceConnection
-    static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine")
+    @ServiceConnection(name = "postgres")
+    static final PostgreSQLContainer postgres = new PostgreSQLContainer(PostgreSqlTestImage.NAME)
             .withDatabaseName("cart_decision_tree")
             .withUsername("cart")
             .withUrlParam("sslmode", "disable")

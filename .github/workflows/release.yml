@@ -3,13 +3,7 @@ name: Release
 on:
   push:
     branches: [main]
-  workflow_dispatch:
-    inputs:
-      dry_run:
-        description: Verify release inputs without publishing
-        required: true
-        default: true
-        type: boolean
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -35,7 +29,7 @@ jobs:
       pull-requests: read
     steps:
       - name: Check out exact main head
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
@@ -48,7 +42,7 @@ jobs:
           publish=false
           if [[ "${GITHUB_EVENT_NAME}" == push ]]; then
             promotion_head=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" \
-              --jq '[.[] | select(.state == "closed" and .merged_at != null and .base.ref == "main" and .head.ref == "development" and .merge_commit_sha == env.GITHUB_SHA)] | if length == 1 then .[0].head.sha else empty end')
+              --jq '[.[] | select(.state == "closed" and .merged_at != null and .base.ref == "main" and .head.ref == "development" and .head.repo.full_name == env.GITHUB_REPOSITORY and .merge_commit_sha == env.GITHUB_SHA)] | if length == 1 then .[0].head.sha else empty end')
             test -n "$promotion_head"
             git merge-base --is-ancestor "$promotion_head" HEAD
             publish=true
@@ -58,14 +52,31 @@ jobs:
         id: version
         run: |
           set -euo pipefail
-          latest=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -1)
-          if [[ -z "$latest" ]]; then
-            version=v0.1.0
-          else
-            IFS=. read -r major minor patch <<< "${latest#v}"
-            version="v${major}.${minor}.$((patch + 1))"
+          version=''
+          while IFS= read -r tag; do
+            [[ "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || continue
+            [[ -z "$version" ]] || { echo 'multiple SemVer tags point at this commit' >&2; exit 1; }
+            version=$tag
+          done < <(git tag --points-at HEAD)
+          if [[ -z "$version" ]]; then
+            latest=''
+            while IFS= read -r tag; do
+              if [[ "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+                latest=$tag
+                break
+              fi
+            done < <(git tag --list 'v*' --sort=-v:refname)
+            if [[ -z "$latest" ]]; then
+              version=v0.1.0
+            else
+              IFS=. read -r major minor patch <<< "${latest#v}"
+              version="v${major}.${minor}.$((patch + 1))"
+            fi
+            if git rev-parse --verify --quiet "refs/tags/${version}"; then
+              echo "next version already exists: $version" >&2
+              exit 1
+            fi
           fi
-          git rev-parse --verify --quiet "refs/tags/${version}" && exit 1 || true
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "version_number=${version#v}" >> "$GITHUB_OUTPUT"
       - name: Set up Java 25
@@ -78,7 +89,7 @@ jobs:
       - name: Run exact-head release gate
         run: |
           python3 scripts/verify_repository.py
-          python3 scripts/publication_audit.py --tree HEAD
+          python3 scripts/publication_audit.py --history
           ./gradlew --no-daemon clean check bootJar -PreleaseVersion=${{ steps.version.outputs.version_number }}
       - name: Stage versioned release artifact
         run: |
@@ -87,7 +98,7 @@ jobs:
             build/release/cart-decision-tree-${{ steps.version.outputs.version_number }}.jar
           (cd build/release && sha256sum cart-decision-tree-${{ steps.version.outputs.version_number }}.jar > SHA256SUMS)
       - name: Upload verified release artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-application
           path: build/release/
@@ -105,11 +116,11 @@ jobs:
         arch: [amd64, arm64]
     steps:
       - name: Check out exact main head
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: ${{ github.sha }}
       - name: Download verified release artifact
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: release-application
           path: build/release-download
@@ -120,9 +131,9 @@ jobs:
           cp build/release-download/cart-decision-tree-${{ needs.verify.outputs.version_number }}.jar \
             build/release/cart-decision-tree.jar
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4
       - name: Set up Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
       - name: Build exact platform candidate
         run: |
           docker buildx build \
@@ -152,7 +163,7 @@ jobs:
       - name: Export exact smoke-tested candidate
         run: docker save cart-decision-tree:candidate-${{ matrix.arch }} | gzip -9 > candidate-${{ matrix.arch }}.tar.gz
       - name: Upload exact platform candidate
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: candidate-${{ matrix.arch }}
           path: |
@@ -182,12 +193,12 @@ jobs:
       attestations: write
     steps:
       - name: Check out exact main head
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
       - name: Download release inputs
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: "*"
           path: release-inputs
@@ -211,7 +222,9 @@ jobs:
             test "$actual" = "$expected"
             platform_ref="${IMAGE}:sha-${GITHUB_SHA}-${arch}"
             docker tag "cart-decision-tree:candidate-${arch}" "$platform_ref"
-            docker push "$platform_ref"
+            if ! docker buildx imagetools inspect "$platform_ref" >/dev/null 2>&1; then
+              docker push "$platform_ref"
+            fi
             digest=$(docker buildx imagetools inspect "$platform_ref" --format '{{json .Manifest.Digest}}' | tr -d '"')
             registry_config=$(docker buildx imagetools inspect --raw "${platform_ref}@${digest}" \
               | python3 -c 'import json, sys; print(json.load(sys.stdin)["config"]["digest"])')
@@ -219,14 +232,23 @@ jobs:
             printf '%s %s\n' "$arch" "$digest" >> IMAGE-DIGESTS
             refs+=("${platform_ref}@${digest}")
           done
-          docker buildx imagetools create --tag "${IMAGE}:${{ needs.verify.outputs.version }}" "${refs[@]}"
-          docker buildx imagetools create --tag "${IMAGE}:latest" "${refs[@]}"
-          index_digest=$(docker buildx imagetools inspect "${IMAGE}:${{ needs.verify.outputs.version }}" \
-            --format '{{json .Manifest.Digest}}' | tr -d '"')
-          latest_digest=$(docker buildx imagetools inspect "${IMAGE}:latest" \
+          sha_index_ref="${IMAGE}:sha-${GITHUB_SHA}"
+          if docker buildx imagetools inspect "$sha_index_ref" >/dev/null 2>&1; then
+            docker buildx imagetools inspect --raw "$sha_index_ref" \
+              | python3 -c 'import json, pathlib, sys; data=json.load(sys.stdin); actual=sorted(item["digest"] for item in data["manifests"]); expected=sorted(line.split()[1] for line in pathlib.Path("IMAGE-DIGESTS").read_text().splitlines()); assert actual == expected, (actual, expected)'
+          else
+            docker buildx imagetools create --tag "$sha_index_ref" "${refs[@]}"
+          fi
+          index_digest=$(docker buildx imagetools inspect "$sha_index_ref" \
             --format '{{json .Manifest.Digest}}' | tr -d '"')
           test -n "$index_digest"
-          test "$latest_digest" = "$index_digest"
+          version_ref="${IMAGE}:${{ needs.verify.outputs.version }}"
+          if docker buildx imagetools inspect "$version_ref" >/dev/null 2>&1; then
+            version_digest=$(docker buildx imagetools inspect "$version_ref" --format '{{json .Manifest.Digest}}' | tr -d '"')
+            test "$version_digest" = "$index_digest"
+          else
+            docker buildx imagetools create --tag "$version_ref" "${IMAGE}@${index_digest}"
+          fi
           docker buildx imagetools inspect --raw "${IMAGE}@${index_digest}" \
             | python3 -c 'import json, sys; data=json.load(sys.stdin); actual={(item["platform"]["os"], item["platform"]["architecture"]) for item in data["manifests"]}; expected={("linux", "amd64"), ("linux", "arm64")}; assert actual == expected, (actual, expected)'
           echo "index_digest=$index_digest" >> "$GITHUB_OUTPUT"
@@ -257,8 +279,13 @@ jobs:
           set -euo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git tag --annotate "${{ needs.verify.outputs.version }}" --message "Release ${{ needs.verify.outputs.version }}"
-          git push origin "refs/tags/${{ needs.verify.outputs.version }}"
+          version=${{ needs.verify.outputs.version }}
+          if git rev-parse --verify --quiet "refs/tags/${version}"; then
+            test "$(git rev-list -n 1 "$version")" = "$GITHUB_SHA"
+          else
+            git tag --annotate "$version" --message "Release $version"
+            git push origin "refs/tags/${version}"
+          fi
           cp IMAGE-DIGESTS release-inputs/IMAGE-DIGESTS
           printf 'amd64 %s\narm64 %s\n' \
             "$(cat release-inputs/IMAGE-ID-amd64)" \
@@ -268,12 +295,41 @@ jobs:
             cart-decision-tree-${{ needs.verify.outputs.version_number }}.jar \
             SBOM-amd64.spdx.json SBOM-arm64.spdx.json IMAGE-DIGESTS IMAGE-IDS IMAGE-INDEX \
             > SHA256SUMS)
-          gh release create "${{ needs.verify.outputs.version }}" \
-            release-inputs/cart-decision-tree-${{ needs.verify.outputs.version_number }}.jar \
-            release-inputs/SHA256SUMS \
-            release-inputs/SBOM-amd64.spdx.json \
-            release-inputs/SBOM-arm64.spdx.json \
-            release-inputs/IMAGE-DIGESTS \
-            release-inputs/IMAGE-IDS \
-            release-inputs/IMAGE-INDEX \
-            --verify-tag --generate-notes --title "${{ needs.verify.outputs.version }}"
+          assets=(
+            "release-inputs/cart-decision-tree-${{ needs.verify.outputs.version_number }}.jar"
+            release-inputs/SHA256SUMS
+            release-inputs/SBOM-amd64.spdx.json
+            release-inputs/SBOM-arm64.spdx.json
+            release-inputs/IMAGE-DIGESTS
+            release-inputs/IMAGE-IDS
+            release-inputs/IMAGE-INDEX
+          )
+          if gh release view "$version" >/dev/null 2>&1; then
+            existing=$(mktemp -d)
+            gh release download "$version" --dir "$existing" || true
+            mapfile -t remote_names < <(gh release view "$version" --json assets --jq '.assets[].name')
+            for remote_name in "${remote_names[@]}"; do
+              known=false
+              for asset in "${assets[@]}"; do [[ "$remote_name" == "${asset##*/}" ]] && known=true; done
+              [[ "$known" == true ]] || { echo "unexpected existing release asset: $remote_name" >&2; exit 1; }
+            done
+            for asset in "${assets[@]}"; do
+              name=${asset##*/}
+              if [[ -f "$existing/$name" ]]; then
+                cmp -s "$asset" "$existing/$name"
+              else
+                gh release upload "$version" "$asset"
+              fi
+            done
+          else
+            gh release create "$version" "${assets[@]}" \
+              --verify-tag --generate-notes --title "$version"
+          fi
+      - name: Update latest after immutable release completion
+        run: |
+          set -euo pipefail
+          docker buildx imagetools create --tag "${IMAGE}:latest" \
+            "${IMAGE}@${{ steps.platforms.outputs.index_digest }}"
+          latest_digest=$(docker buildx imagetools inspect "${IMAGE}:latest" \
+            --format '{{json .Manifest.Digest}}' | tr -d '"')
+          test "$latest_digest" = "${{ steps.platforms.outputs.index_digest }}"

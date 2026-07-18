@@ -1,0 +1,13 @@
+.git
+.github
+.gradle
+.idea
+.worktrees
+build/*
+!build/release/
+build/release/*
+data
+release-artifacts
+*.md
+!LICENSE
+!build/release/cart-decision-tree.jar
