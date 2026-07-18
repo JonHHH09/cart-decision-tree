@@ -40,6 +40,12 @@ BLOCKING = {
 }
 
 
+def is_allowed_commit_email(email: str) -> bool:
+    """Accept privacy-preserving GitHub identities used by people and platform merges."""
+    normalized = email.casefold()
+    return not normalized or normalized.endswith("@users.noreply.github.com") or normalized == "noreply@github.com"
+
+
 def git(*arguments: str, text: bool = False):
     result = subprocess.run(
         ["git", *arguments], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=text
@@ -103,7 +109,7 @@ def main() -> int:
         affected_commits: set[str] = set()
         for line in log.splitlines():
             commit, author_email, committer_email = line.split("\x00")
-            if any(email and "noreply.github.com" not in email for email in (author_email, committer_email)):
+            if any(not is_allowed_commit_email(email) for email in (author_email, committer_email)):
                 affected_commits.add(commit)
         metadata_blockers = len(affected_commits)
 
