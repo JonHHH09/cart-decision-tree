@@ -1,0 +1,146 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [development, main]
+  push:
+    branches: [development, main]
+
+permissions:
+  contents: read
+
+env:
+  SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  policy:
+    name: Branch policy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact source head
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Validate pull-request direction
+        run: python3 scripts/check_branch_policy.py
+
+  repository:
+    name: Repository policy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact source head
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Verify immutable inputs and workflow pins
+        run: python3 scripts/verify_repository.py
+      - name: Audit publication tree
+        run: python3 scripts/publication_audit.py --tree HEAD
+      - name: Check whitespace
+        run: git diff --check ${{ github.event.pull_request.base.sha || github.event.before }}..HEAD
+
+  test:
+    name: Test and coverage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact source head
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Set up Java 25
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          distribution: temurin
+          java-version: "25"
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@4c125117fe7c5aed11272ec4213f602f012f89f2 # v5
+      - name: Run full verification and package
+        run: ./gradlew --no-daemon clean check bootJar
+      - name: Stage exact application artifact
+        run: |
+          mkdir -p build/release
+          cp build/libs/cart-decision-tree-*.jar build/release/cart-decision-tree.jar
+          sha256sum build/release/cart-decision-tree.jar > build/release/cart-decision-tree.jar.sha256
+      - name: Upload verified application artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verified-application-${{ env.SOURCE_SHA }}
+          path: |
+            build/release/cart-decision-tree.jar
+            build/release/cart-decision-tree.jar.sha256
+            build/reports/jacoco/test/jacocoTestReport.xml
+          if-no-files-found: error
+          retention-days: 7
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+          license-check: true
+          deny-licenses: GPL-2.0, GPL-3.0, AGPL-1.0, AGPL-3.0
+
+  container:
+    name: Container smoke
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact source head
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Download verified application artifact
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: verified-application-${{ env.SOURCE_SHA }}
+          path: build/release
+      - name: Verify and build image
+        run: |
+          sha256sum --check build/release/cart-decision-tree.jar.sha256
+          docker build --build-arg "REVISION=${SOURCE_SHA}" --tag cart-decision-tree:ci .
+          test "$(docker image inspect cart-decision-tree:ci --format '{{.Config.User}}')" = app
+      - name: Scan candidate image
+        uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+        with:
+          image: cart-decision-tree:ci
+          fail-build: true
+          severity-cutoff: high
+          only-fixed: true
+          output-format: table
+      - name: Smoke test hardened runtime
+        env:
+          CART_IMAGE: cart-decision-tree:ci
+          POSTGRES_PASSWORD: synthetic-ci-password
+        run: |
+          docker compose -f compose.release.yaml up --detach --wait --wait-timeout 180
+          curl --fail --silent --show-error http://127.0.0.1:8081/actuator/health/readiness
+          test "$(docker inspect cart-decision-tree-app-1 --format '{{.HostConfig.ReadonlyRootfs}}')" = true
+      - name: Collect container logs
+        if: failure()
+        env:
+          CART_IMAGE: cart-decision-tree:ci
+          POSTGRES_PASSWORD: synthetic-ci-password
+        run: docker compose -f compose.release.yaml logs --no-color
+      - name: Remove smoke environment
+        if: always()
+        env:
+          CART_IMAGE: cart-decision-tree:ci
+          POSTGRES_PASSWORD: synthetic-ci-password
+        run: docker compose -f compose.release.yaml down --volumes --remove-orphans

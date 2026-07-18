@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: "/"
+    schedule:
+      interval: weekly
+    target-branch: development
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]
+    groups:
+      spring:
+        patterns: ["org.springframework*", "org.springframework.ai*"]
+      testcontainers:
+        patterns: ["org.testcontainers*"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    target-branch: development
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+    target-branch: development
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]
