@@ -16,7 +16,7 @@ Contributions are accepted through issue-linked pull requests. By contributing, 
 5. Run the local gate:
    ```sh
    ./gradlew --no-daemon clean check bootJar
-   python3 scripts/publication_audit.py --tree HEAD
+python3 scripts/publication_audit.py --history
    ```
 6. Use isolated conventional commits (`feat:`, `fix:`, `test:`, `docs:`, `build:`, `ci:`, or `chore:`) and reference the issue in the commit body.
 7. Open a pull request to `development`. Only the `development` branch may open a promotion pull request to `main`.

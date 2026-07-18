@@ -78,7 +78,7 @@ jobs:
       - name: Run exact-head release gate
         run: |
           python3 scripts/verify_repository.py
-          python3 scripts/publication_audit.py --tree HEAD
+          python3 scripts/publication_audit.py --history
           ./gradlew --no-daemon clean check bootJar -PreleaseVersion=${{ steps.version.outputs.version_number }}
       - name: Stage versioned release artifact
         run: |

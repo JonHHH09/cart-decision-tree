@@ -17,7 +17,7 @@
 ## Verification
 
 - [ ] `./gradlew --no-daemon clean check bootJar`
-- [ ] `python3 scripts/publication_audit.py --tree HEAD`
+- [ ] `python3 scripts/publication_audit.py --history`
 - [ ] Container/workflow checks, when applicable
 
 ## Release and rollback
