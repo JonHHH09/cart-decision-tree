@@ -25,7 +25,7 @@ CONTENT_RULES = (
     (re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----"), "private-key"),
     (re.compile(rb"gh[pousr]_[A-Za-z0-9]{20,}"), "github-token"),
     (re.compile(rb"/Users/[A-Za-z0-9._-]+/"), "private-absolute-path"),
-    (re.compile(rb"(?i)[A-Z0-9._%+-]+@(?!users\.noreply\.github\.com|example\.(?:com|org|net)|localhost)[A-Z0-9.-]+\.[A-Z]{2,}"), "personal-contact"),
+    (re.compile(rb"(?i)[A-Z0-9._%+-]+@(?!users\.noreply\.github\.com|github\.com|example\.(?:com|org|net|invalid)|localhost)[A-Z0-9.-]+\.[A-Z]{2,}"), "personal-contact"),
 )
 
 BLOCKING = {
