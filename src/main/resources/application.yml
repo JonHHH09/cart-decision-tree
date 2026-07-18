@@ -8,23 +8,19 @@ spring:
     mcp:
       server:
         name: cart-decision-tree
-        version: 0.0.1
+        version: ${APP_VERSION:0.1.0-SNAPSHOT}
         protocol: STREAMABLE
         instructions: Train, inspect, predict with, and evaluate the seeded CART fruit classifier.
   datasource:
     url: jdbc:postgresql://localhost:${POSTGRES_PORT:5433}/cart_decision_tree
     username: cart
     password: cart
-  autoconfigure:
-    exclude:
-      - org.springframework.ai.vectorstore.elasticsearch.autoconfigure.ElasticsearchVectorStoreAutoConfiguration
-      - org.springframework.ai.vectorstore.mongodb.autoconfigure.MongoDBAtlasVectorStoreAutoConfiguration
-      - org.springframework.ai.vectorstore.opensearch.autoconfigure.OpenSearchVectorStoreAutoConfiguration
-      - org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration
-      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
-      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioTranscriptionAutoConfiguration
-      - org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration
-      - org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration
-      - org.springframework.ai.model.openai.autoconfigure.OpenAiImageAutoConfiguration
-      - org.springframework.ai.model.openai.autoconfigure.OpenAiModerationAutoConfiguration
-      - org.springframework.ai.model.postgresml.autoconfigure.PostgresMlEmbeddingAutoConfiguration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true

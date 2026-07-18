@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FruitDatasetMigrationTests {
 
     @Container
-    static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine")
+    static final PostgreSQLContainer postgres = new PostgreSQLContainer(PostgreSqlTestImage.NAME)
             .withDatabaseName("cart_decision_tree")
             .withUsername("cart")
             .withUrlParam("sslmode", "disable")
