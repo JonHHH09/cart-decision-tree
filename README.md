@@ -2,6 +2,12 @@
 
 Spring Boot 4.1 / Java 25 implementation of a CART fruit-classification workflow with a server-rendered human interface and an MCP interface for AI agents.
 
+[![CI](https://github.com/JonHHH09/cart-decision-tree/actions/workflows/ci.yml/badge.svg?branch=development)](https://github.com/JonHHH09/cart-decision-tree/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/JonHHH09/cart-decision-tree/actions/workflows/codeql.yml/badge.svg?branch=development)](https://github.com/JonHHH09/cart-decision-tree/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+The project is intentionally small but production-disciplined: deterministic dataset fingerprints, bounded inputs and serialization, sanitized adapter errors, PostgreSQL migrations, exact protocol tests, protected delivery branches, and signed release evidence.
+
 ## Architecture
 
 The application uses ports and adapters:
@@ -19,6 +25,8 @@ Both inbound adapters delegate to `CartApplicationService`; protocol adapters co
 Runtime boundaries cap each loaded dataset at 512 examples, each generated tree at 1,023 nodes and 512 levels, and rendered tree text at 128,000 characters. Oversized inputs fail with sanitized application errors before recursive rendering or MCP serialization.
 
 ## Run locally
+
+Prerequisites: Java 25, Docker, and Git.
 
 Start PostgreSQL and the application with collision-safe development ports:
 
@@ -69,6 +77,38 @@ Tool results are structured, inputs are bounded, and adapter failures are saniti
 
 PostgreSQL adapter and Flyway tests use Testcontainers. Docker must be available for the complete suite.
 
+The `check` task enforces the JaCoCo line-coverage gate. Repository and publication policy checks run separately:
+
+```sh
+python3 scripts/verify_repository.py
+python3 scripts/publication_audit.py --tree HEAD
+```
+
+## Run the released container
+
+Stable releases publish a signed `linux/amd64` + `linux/arm64` OCI index to GHCR. Use an immutable digest in production:
+
+```sh
+export CART_IMAGE=ghcr.io/jonhhh09/cart-decision-tree@sha256:<release-digest>
+export POSTGRES_PASSWORD='<strong-random-password>'
+docker compose -f compose.release.yaml up -d --wait
+```
+
+The application runs as an unprivileged user with a read-only root filesystem, no Linux capabilities, a bounded temporary filesystem, and an Actuator readiness probe. `latest` is a discovery alias, not an immutable deployment reference.
+
+## Release model
+
+- Feature/fix branches start from current `origin/development` and merge through reviewed pull requests to `development`.
+- Only `development` may open a promotion pull request to `main`.
+- Direct pushes, force pushes, and branch deletion are blocked for both long-lived branches.
+- A verified promotion merge automatically creates the next patch SemVer tag, GitHub Release, checksums, SBOMs, provenance attestations, signature, and GHCR package.
+
+See `CONTRIBUTING.md`, `GOVERNANCE.md`, `SECURITY.md`, and `RELEASING.md`. Scope and provenance limits are documented in `MODEL_CARD.md`, `DATASET_CARD.md`, and `THIRD_PARTY_NOTICES.md`.
+
 ## Frontend asset policy
 
 HTMX is served locally from `src/main/resources/static/vendor/`; no runtime CDN is required. Version, upstream source, license, checksums, and the update procedure are recorded in `HTMX-ASSET.md` beside the asset.
+
+## License
+
+Copyright © 2026 Joni Hysaj. Distributed under the [MIT License](LICENSE). The vendored HTMX asset retains its upstream license in `src/main/resources/static/vendor/HTMX-LICENSE.txt`.
