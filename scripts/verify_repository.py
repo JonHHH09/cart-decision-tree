@@ -47,6 +47,10 @@ def main() -> int:
                 if not image.startswith("${") and not IMAGE_DIGEST.search(image):
                     failures.append(f"mutable container image: {compose}")
 
+    release_compose = Path("compose.release.yaml").read_text(encoding="utf-8")
+    if "image: ${CART_IMAGE:?" not in release_compose:
+        failures.append("release Compose image must be explicitly supplied")
+
     if not Path("gradle.lockfile").is_file():
         failures.append("missing Gradle dependency lock")
 
@@ -56,6 +60,10 @@ def main() -> int:
         required = {"deletion", "non_fast_forward", "pull_request", "required_status_checks"}
         if policy.get("enforcement") != "active" or not required.issubset(rule_types):
             failures.append(f"incomplete branch ruleset: {ruleset}")
+        status_rule = next(rule for rule in policy["rules"] if rule["type"] == "required_status_checks")
+        for check in status_rule["parameters"]["required_status_checks"]:
+            if check.get("integration_id") != 15368:
+                failures.append(f"required check is not bound to GitHub Actions: {ruleset}")
 
     if failures:
         print("\n".join(failures), file=sys.stderr)

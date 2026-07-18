@@ -42,7 +42,7 @@ jobs:
           fetch-depth: 0
       - name: Verify immutable inputs and workflow pins
         run: |
-          python3 -m unittest scripts.test_publication_audit
+          python3 -m unittest scripts.test_publication_audit scripts.test_check_branch_policy
           python3 scripts/verify_repository.py
       - name: Audit reachable publication history
         run: python3 scripts/publication_audit.py --history

@@ -14,7 +14,7 @@ services:
       - postgres-data:/var/lib/postgresql
 
   app:
-    image: ${CART_IMAGE:-ghcr.io/jonhhh09/cart-decision-tree:latest}
+    image: ${CART_IMAGE:?Set CART_IMAGE to an immutable image digest}
     depends_on:
       postgres:
         condition: service_healthy

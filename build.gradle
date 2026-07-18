@@ -86,6 +86,11 @@ tasks.named('bootJar') {
 	archiveFileName = "cart-decision-tree-${project.version}.jar"
 }
 
+tasks.withType(AbstractArchiveTask).configureEach {
+	preserveFileTimestamps = false
+	reproducibleFileOrder = true
+}
+
 tasks.withType(JavaCompile).configureEach {
 	options.compilerArgs += '-parameters'
 }
