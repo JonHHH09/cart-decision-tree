@@ -18,7 +18,6 @@ def validate_pull_request(event: dict[str, Any], repository: str) -> Optional[st
     pull_request = event["pull_request"]
     base = pull_request["base"]["ref"]
     head = pull_request["head"]["ref"]
-    actor = event.get("sender", {}).get("login", "")
 
     if base == "main":
         head_repository = pull_request.get("head", {}).get("repo", {}).get("full_name", "")
@@ -27,7 +26,10 @@ def validate_pull_request(event: dict[str, Any], repository: str) -> Optional[st
     elif base == "development":
         if head in {"main", "development"}:
             return "Feature changes require a dedicated branch."
-        if not ISSUE_BRANCH.fullmatch(head) and actor != "dependabot[bot]":
+        head_repository = pull_request.get("head", {}).get("repo", {}).get("full_name", "")
+        author = pull_request.get("user", {}).get("login", "")
+        is_same_repository_dependabot_pr = author == "dependabot[bot]" and head_repository == repository
+        if not ISSUE_BRANCH.fullmatch(head) and not is_same_repository_dependabot_pr:
             return "Feature branch must include an OPEN/JOB issue identifier."
     else:
         return "Pull requests must target development or main."
