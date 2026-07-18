@@ -29,13 +29,13 @@
         "do_not_enforce_on_create": false,
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
-          {"context": "Branch policy"},
-          {"context": "Repository policy"},
-          {"context": "Test and coverage"},
-          {"context": "Dependency review"},
-          {"context": "Container smoke"},
-          {"context": "CodeQL Java"},
-          {"context": "Qodana JVM"}
+          {"context": "Branch policy", "integration_id": 15368},
+          {"context": "Repository policy", "integration_id": 15368},
+          {"context": "Test and coverage", "integration_id": 15368},
+          {"context": "Dependency review", "integration_id": 15368},
+          {"context": "Container smoke", "integration_id": 15368},
+          {"context": "CodeQL Java", "integration_id": 15368},
+          {"context": "Qodana JVM", "integration_id": 15368}
         ]
       }
     }
