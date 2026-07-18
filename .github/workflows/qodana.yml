@@ -21,7 +21,21 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+      - name: Detect JVM-analyzable changes
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != pull_request ]] || ! git diff --quiet \
+            "$BASE_SHA"...HEAD -- '*.java' '*.kt' '*.kts' '*.gradle' '*.gradle.kts' qodana.yaml; then
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'run=false' >> "$GITHUB_OUTPUT"
+          fi
       - name: Run Qodana
+        if: steps.scope.outputs.run == 'true'
         uses: JetBrains/qodana-action@107939d10e5ddbffb88bc5dd279934314937ed7a # v2026.1.3
         with:
           upload-result: true
