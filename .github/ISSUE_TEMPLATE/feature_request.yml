@@ -1,0 +1,25 @@
+name: Improvement proposal
+description: Propose a scoped, evidence-backed change
+title: "[Proposal]: "
+labels: ["Improvement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe the current limitation and evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Include compatibility, resource-bound, privacy, and operational effects.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: true
