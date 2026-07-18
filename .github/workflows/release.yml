@@ -29,7 +29,7 @@ jobs:
       pull-requests: read
     steps:
       - name: Check out exact main head
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
@@ -98,7 +98,7 @@ jobs:
             build/release/cart-decision-tree-${{ steps.version.outputs.version_number }}.jar
           (cd build/release && sha256sum cart-decision-tree-${{ steps.version.outputs.version_number }}.jar > SHA256SUMS)
       - name: Upload verified release artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: release-application
           path: build/release/
@@ -116,11 +116,11 @@ jobs:
         arch: [amd64, arm64]
     steps:
       - name: Check out exact main head
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: ${{ github.sha }}
       - name: Download verified release artifact
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: release-application
           path: build/release-download
@@ -131,9 +131,9 @@ jobs:
           cp build/release-download/cart-decision-tree-${{ needs.verify.outputs.version_number }}.jar \
             build/release/cart-decision-tree.jar
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4
       - name: Set up Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
       - name: Build exact platform candidate
         run: |
           docker buildx build \
@@ -163,7 +163,7 @@ jobs:
       - name: Export exact smoke-tested candidate
         run: docker save cart-decision-tree:candidate-${{ matrix.arch }} | gzip -9 > candidate-${{ matrix.arch }}.tar.gz
       - name: Upload exact platform candidate
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: candidate-${{ matrix.arch }}
           path: |
@@ -193,12 +193,12 @@ jobs:
       attestations: write
     steps:
       - name: Check out exact main head
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
       - name: Download release inputs
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: "*"
           path: release-inputs
