@@ -81,7 +81,7 @@ The `check` task enforces the JaCoCo line-coverage gate. Repository and publicat
 
 ```sh
 python3 scripts/verify_repository.py
-python3 scripts/publication_audit.py --tree HEAD
+python3 scripts/publication_audit.py --history
 ```
 
 ## Run the released container
