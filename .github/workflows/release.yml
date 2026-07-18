@@ -263,13 +263,13 @@ jobs:
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             "${IMAGE}@${{ steps.platforms.outputs.index_digest }}"
       - name: Attest image provenance
-        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661 # v3
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
         with:
           subject-name: ${{ env.IMAGE }}
           subject-digest: ${{ steps.platforms.outputs.index_digest }}
           push-to-registry: true
       - name: Attest application artifact provenance
-        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661 # v3
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
         with:
           subject-path: release-inputs/cart-decision-tree-${{ needs.verify.outputs.version_number }}.jar
       - name: Create immutable tag and GitHub Release
